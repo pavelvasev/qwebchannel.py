@@ -1,22 +1,16 @@
 #!/usr/bin/env python3
 import sys
 import json
-###################################################################################################
-###################################################################################################
-# ProjectName         : qwebchannel.py
-# ProjectVersion      : 1.0.0
-# ProjectDeveloper    : kawser <github.com/mkawserm> 
-# ProjectDescription  : qwebchannel.js client library port for python36
-###################################################################################################
-###################################################################################################
+
+
 class JSObject(dict):
     """Enable dictionary access like javascript object"""
-    __getattr__= dict.__getitem__
-    __setattr__= dict.__setitem__
-    __delattr__= dict.__delitem__
-###################################################################################################
-###################################################################################################
-QWebChannelMessageTypes:JSObject = {
+    __getattr__ = dict.__getitem__
+    __setattr__ = dict.__setitem__
+    __delattr__ = dict.__delitem__
+
+
+QWebChannelMessageTypes: JSObject = {
     "signal": 1,
     "propertyUpdate": 2,
     "init": 3,
@@ -28,8 +22,8 @@ QWebChannelMessageTypes:JSObject = {
     "setProperty": 9,
     "response": 10,
 }
-###################################################################################################
-###################################################################################################
+
+
 class QObject(object):
     def __getitem__(self, key):
         return self.__dict__[key]
@@ -156,7 +150,9 @@ class QObject(object):
 
             def __disconnect_func(callback):
                 if not callable(callback):
-                    print("Bad callback given to disconnect from signal " + signalName)
+                    print(
+                        "Bad callback given to disconnect from signal " +
+                        signalName)
                     return
                 if signalIndex not in _object.__objectSignals__.keys():
                     _object.__objectSignals__[signalIndex] = []
@@ -172,7 +168,8 @@ class QObject(object):
                           signalName + " to " + callback)
                     return
                 _object.__objectSignals__[signalIndex].remove(idx)
-                if not isPropertyNotifySignal and len(_object.__objectSignals__[signalIndex]) == 0:
+                if not isPropertyNotifySignal and len(
+                        _object.__objectSignals__[signalIndex]) == 0:
                     # only required for "pure" signals, handled separately for properties in propertyUpdate
                     webChannel.exec({
                         "type": QWebChannelMessageTypes["disconnectFromSignal"],
@@ -247,14 +244,14 @@ class QObject(object):
 
             def __get_f():
                 propertyValue = _object.__propertyCache__[propertyIndex]
-                if propertyValue == None:
+                if propertyValue is None:
                     # This shouldn't happen
                     print("Undefined value in property cache for property \"" +
                           propertyName + "\" in object " + _object.__id__)
                 return propertyValue
 
             def __set_f(value):
-                if value == None:
+                if value is None:
                     print("Property setter for " + propertyName +
                           " called with undefined value!")
                     return
@@ -276,14 +273,18 @@ class QObject(object):
             addSignal(signal, False)
 ###################################################################################################
 ###################################################################################################
+
+
 class QWebchannel(object):
     """QWebchannel port for python3.6"""
 
     def __init__(self, transport, initCallback):
         super(QWebchannel, self).__init__()
         if not isinstance(transport, object) or not callable(transport.send):
-            raise Exception("The QWebChannel expects a transport object with a send function and onmessage callback property." +
-                            " Given is: transport: " + str(type(transport)) + ", transport.send: " + str(type(transport.send)))
+            raise Exception(
+                "The QWebChannel expects a transport object with a send function and onmessage callback property."
+                + " Given is: transport: " + str(type(transport)) +
+                ", transport.send: " + str(type(transport.send)))
 
         self.initCallback = initCallback
         self.channel = self
@@ -375,8 +376,8 @@ class QWebchannel(object):
         if type(data) != str:
             data = json.dumps(data)
         self.transport.send(data)
-###################################################################################################
-###################################################################################################
+
+
 if __name__ == "__main__":
     import websocket
     import threading
@@ -391,15 +392,16 @@ if __name__ == "__main__":
 
     def channel_ready(channel):
         channel.objects.dialog.sendText.connect(receive_message_from_cpp)
-        channel.objects.dialog.receiveText("Client connected, ready to send/receive messages!")
-        thread = threading.Thread(target=data_send_from_python, args=(channel,))
+        channel.objects.dialog.receiveText(
+            "Client connected, ready to send/receive messages!")
+        thread = threading.Thread(
+            target=data_send_from_python, args=(channel,))
         thread.setDaemon(True)
         thread.start()
+
     def on_open(ws):
         print("Socket started")
-        w = QWebchannel(ws,channel_ready)
+        w = QWebchannel(ws, channel_ready)
     ws = websocket.WebSocketApp("ws://127.0.0.1:12345")
     ws.on_open = on_open
     ws.run_forever()
-###################################################################################################
-###################################################################################################
