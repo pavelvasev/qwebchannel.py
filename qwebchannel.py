@@ -85,8 +85,16 @@ class QObject(object):
             # it doesn't work
             if isinstance(response, str):
                 return response
+            # all codes below considers response to be a dict    
+            # if not, just return it
+            if not isinstance(response,dict):
+                return response
 
-            if not response or "__QObject*__" not in response.keys() or "id" not in response.keys():
+            # special case for null
+            #if not response:
+            #    return response
+
+            if "__QObject*__" not in response.keys() or "id" not in response.keys():
                 return response
 
             objectId = response["id"]
@@ -128,7 +136,7 @@ class QObject(object):
 
         def addSignal(signalData, isPropertyNotifySignal):
             signalName = signalData[0]
-            signalIndex = signalData[1]
+            signalIndex = str(signalData[1]) # str - because signal indices from Qt ongoing messages come as strings
 
             _object[signalName] = JSObject()
 
@@ -180,6 +188,11 @@ class QObject(object):
             _object[signalName].disconnect = __disconnect_func
 
         def invokeSignalCallbacks(signalName, signalArgs):
+            # todo fix new numeric names of prop change signals
+            #if not signalName in self.__objectSignals__:
+            #    print("qwebchannel: no such signalName in signals. signalName=",signalName,type(signalName),"self.__objectSignals__=",self.__objectSignals__)
+            #    return 0
+
             connections = self.__objectSignals__[signalName]
             if connections:
                 for callback in connections:
@@ -228,7 +241,7 @@ class QObject(object):
             _object[methodName] = func
 
         def bindGetterSetter(propertyInfo):
-            propertyIndex = propertyInfo[0]
+            propertyIndex = str(propertyInfo[0]) # str - because keys from Qt on update signals comes as strings
             propertyName = propertyInfo[1]
             notifySignalData = propertyInfo[2]
             # initialize property cache with current value
@@ -296,6 +309,8 @@ class QWebchannel(object):
             if type(data) == str:
                 data = json.loads(data)
             # print(type(data))
+            # print("onmessage",data)
+            # print("onmessage msg=",message)
             if data["type"] == QWebChannelMessageTypes["signal"]:
                 self.channel.handleSignal(data)
             elif data["type"] == QWebChannelMessageTypes["response"]:
@@ -343,8 +358,7 @@ class QWebchannel(object):
 
     def handlePropertyUpdate(self, message):
         global QWebChannelMessageTypes
-        for i in message["data"].keys():
-            data = message["data"][i]
+        for data in message["data"]:
             _object = self.channel.objects[data["object"]]
             if _object:
                 _object.propertyUpdate(data["signals"], data["properties"])
